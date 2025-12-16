@@ -3,7 +3,7 @@ name = "csiro-biomass"
 version = "0.1.0"
 description = "CSIRO Image2Biomass Kaggle Competition"
 readme = "README.md"
-requires-python = "==3.12"
+requires-python = "~=3.12.0"
 dependencies = [
     "numpy>=1.24.0",
     "pandas>=2.0.0",
