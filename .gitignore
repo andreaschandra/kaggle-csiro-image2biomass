@@ -230,3 +230,6 @@ kaggle.json
 *.safetensors
 wandb/
 mlruns/
+
+# custom
+uv.lock
