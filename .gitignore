@@ -234,6 +234,6 @@ mlruns/
 # custom
 uv.lock
 ./models/
-./configs/
+configs/*.yaml
 fe-models/
 logs/
