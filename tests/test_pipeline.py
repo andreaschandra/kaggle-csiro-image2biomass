@@ -16,7 +16,14 @@ class TestPipeline:
     @patch("csiro_biomass.pipeline.Optimizer")
     @patch("csiro_biomass.pipeline.WeightedHuberLoss")
     def test_pipeline_initialization(
-        self, mock_loss, mock_optimizer, mock_mlp, mock_dataset, mock_extractor, mock_config, mock_logger
+        self,
+        mock_loss,
+        mock_optimizer,
+        mock_mlp,
+        mock_dataset,
+        mock_extractor,
+        mock_config,
+        mock_logger,
     ):
         """Test Pipeline initialization."""
         pipeline = Pipeline(mock_config, mock_logger)
@@ -31,7 +38,14 @@ class TestPipeline:
     @patch("csiro_biomass.pipeline.Optimizer")
     @patch("csiro_biomass.pipeline.WeightedHuberLoss")
     def test_pipeline_set_dataset(
-        self, mock_loss, mock_optimizer, mock_mlp, mock_dataset, mock_extractor, mock_config, mock_logger
+        self,
+        mock_loss,
+        mock_optimizer,
+        mock_mlp,
+        mock_dataset,
+        mock_extractor,
+        mock_config,
+        mock_logger,
     ):
         """Test Pipeline set_dataset method."""
         mock_extractor_instance = MagicMock()
@@ -50,7 +64,14 @@ class TestPipeline:
     @patch("csiro_biomass.pipeline.Optimizer")
     @patch("csiro_biomass.pipeline.WeightedHuberLoss")
     def test_pipeline_set_model(
-        self, mock_loss, mock_optimizer, mock_mlp, mock_dataset, mock_extractor, mock_config, mock_logger
+        self,
+        mock_loss,
+        mock_optimizer,
+        mock_mlp,
+        mock_dataset,
+        mock_extractor,
+        mock_config,
+        mock_logger,
     ):
         """Test Pipeline set_model method."""
         mock_extractor_instance = MagicMock()
@@ -68,7 +89,14 @@ class TestPipeline:
     @patch("csiro_biomass.pipeline.Optimizer")
     @patch("csiro_biomass.pipeline.WeightedHuberLoss")
     def test_pipeline_set_optimizer(
-        self, mock_loss, mock_optimizer, mock_mlp, mock_dataset, mock_extractor, mock_config, mock_logger
+        self,
+        mock_loss,
+        mock_optimizer,
+        mock_mlp,
+        mock_dataset,
+        mock_extractor,
+        mock_config,
+        mock_logger,
     ):
         """Test Pipeline set_optimizer method."""
         pipeline = Pipeline(mock_config, mock_logger)
@@ -82,7 +110,14 @@ class TestPipeline:
     @patch("csiro_biomass.pipeline.Optimizer")
     @patch("csiro_biomass.pipeline.WeightedHuberLoss")
     def test_pipeline_set_criterion(
-        self, mock_loss, mock_optimizer, mock_mlp, mock_dataset, mock_extractor, mock_config, mock_logger
+        self,
+        mock_loss,
+        mock_optimizer,
+        mock_mlp,
+        mock_dataset,
+        mock_extractor,
+        mock_config,
+        mock_logger,
     ):
         """Test Pipeline set_criterion method."""
         pipeline = Pipeline(mock_config, mock_logger)
@@ -96,7 +131,14 @@ class TestPipeline:
     @patch("csiro_biomass.pipeline.Optimizer")
     @patch("csiro_biomass.pipeline.WeightedHuberLoss")
     def test_pipeline_set_epoch_metrics(
-        self, mock_loss, mock_optimizer, mock_mlp, mock_dataset, mock_extractor, mock_config, mock_logger
+        self,
+        mock_loss,
+        mock_optimizer,
+        mock_mlp,
+        mock_dataset,
+        mock_extractor,
+        mock_config,
+        mock_logger,
     ):
         """Test Pipeline set_epoch_metrics method."""
         pipeline = Pipeline(mock_config, mock_logger)

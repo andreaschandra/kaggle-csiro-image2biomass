@@ -13,6 +13,7 @@ class General:
     """General configuration"""
 
     seed: int = 42
+    competition: str = "csiro_biomass"
     model_dir: str = "models/"
     img_dir: str = None
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
@@ -37,7 +38,7 @@ class Dataset:
     """Dataset configuration."""
 
     train: str = None
-    valid: str = None
+    test: str = None
     kfolds: int = 1
 
 

@@ -1,8 +1,10 @@
 """Kaggle dataset download utilities using kagglehub."""
 
+import os
 from pathlib import Path
 
 import kagglehub
+from kagglehub.config import set_kaggle_credentials
 
 
 def authenticate_kaggle() -> None:
@@ -16,7 +18,7 @@ def authenticate_kaggle() -> None:
         >>> from csiro_biomass.utils.kaggle_utils import authenticate_kaggle
         >>> authenticate_kaggle()
     """
-    kagglehub.login()
+    set_kaggle_credentials(username=os.getenv("KAGGLE_USERNAME"), api_key=os.getenv("KAGGLE_KEY"))
 
 
 def download_kaggle_dataset(dataset: str) -> Path:

@@ -10,13 +10,16 @@ from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import Dataset
 
 from csiro_biomass.utils.io import read_csv
+from csiro_biomass.utils.kaggle_utils import authenticate_kaggle, download_kaggle_competition_data
 
 
 class CSIRO(Dataset):
     """CSIRO biomass dataset."""
 
     def __init__(self, config, feature_extractor=None):
-        d_data = read_csv(config.dataset.train)
+        self.config = config
+        self.is_dataset_exist()
+        d_data = read_csv(self.config.dataset.train)
         d_data = self.data_cleanup(d_data)
         d_data = self.target_transform(d_data)
 
@@ -35,6 +38,16 @@ class CSIRO(Dataset):
         self.img_dir_path = config.general.img_dir
         self.feature_extractor = feature_extractor
         self.transform = self.get_tta()
+
+    def is_dataset_exist(self):
+        """Check if dataset exists."""
+        is_available = os.path.exists(self.config.dataset.train) and os.path.exists(
+            os.path.dirname(self.config.dataset.test)
+        )
+
+        if not is_available:
+            authenticate_kaggle()
+            download_kaggle_competition_data(self.config.general.competition)
 
     @staticmethod
     def data_cleanup(d_data):
