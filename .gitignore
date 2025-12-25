@@ -233,3 +233,5 @@ mlruns/
 
 # custom
 uv.lock
+models/
+fe-models/
