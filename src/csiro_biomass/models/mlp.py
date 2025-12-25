@@ -10,7 +10,7 @@ class MLP(nn.Module):
     """MLP regressor model."""
 
     def __init__(self, emb_size):
-        super(MLP, self).__init__()
+        super().__init__()
 
         self.model = nn.Sequential(
             nn.Linear(emb_size, 1024),

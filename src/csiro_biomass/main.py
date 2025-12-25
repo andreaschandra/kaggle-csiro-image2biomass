@@ -2,6 +2,8 @@
 
 import argparse
 
+from dotenv import load_dotenv
+
 from csiro_biomass.config import Config
 from csiro_biomass.pipeline import Pipeline
 from csiro_biomass.utils.logger import setup_logger
@@ -34,4 +36,5 @@ def arg_parser():
 
 if __name__ == "__main__":
     args = arg_parser()
+    load_dotenv()
     main(args)

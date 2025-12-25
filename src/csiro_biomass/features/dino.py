@@ -17,7 +17,6 @@ class DinoFeatureExtractor:
         self.model.eval()
 
     def __call__(self, img, aug_func=None):
-
         if aug_func:
             img = aug_func(image=img)["image"]
 

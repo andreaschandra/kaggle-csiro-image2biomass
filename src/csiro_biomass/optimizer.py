@@ -7,7 +7,6 @@ class Optimizer:
     """Optimizer."""
 
     def __init__(self, model, params=None):
-
         if params is None:
             params = {"lr": 1e-3}
 

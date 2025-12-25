@@ -83,7 +83,6 @@ class Pipeline:
         )
         self.model.train()
         for batch_index, (x, y) in enumerate(data_gen, 1):
-
             x = x.to(self.config.general.device)
             y = y.to(self.config.general.device)
 
@@ -113,7 +112,6 @@ class Pipeline:
         )
         self.model.eval()
         for batch_index, (x, y) in enumerate(data_gen, 1):
-
             x = x.to(self.config.general.device)
             y = y.to(self.config.general.device)
 
@@ -141,10 +139,10 @@ class Pipeline:
 
         self.logger.info(f"Epoch: {i_epoch} | Time: {duration:.1f}s")
         self.logger.info(
-            f"\t Train loss: {self.metrics["train_loss"]} | R2: {self.metrics["train_r2"]}"
+            f"\t Train loss: {self.metrics['train_loss']} | R2: {self.metrics['train_r2']}"
         )
         self.logger.info(
-            f"\t Valid loss: {self.metrics["valid_loss"]} | R2: {self.metrics["valid_r2"]}"
+            f"\t Valid loss: {self.metrics['valid_loss']} | R2: {self.metrics['valid_r2']}"
         )
 
     def routine(self, fold):

@@ -43,6 +43,7 @@ build-backend = "hatchling.build"
 
 [tool.uv]
 dev-dependencies = [
+    "dotenv>=0.9.9",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "ruff>=0.1.0",

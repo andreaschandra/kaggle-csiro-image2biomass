@@ -20,7 +20,6 @@ def setup_logger(name: str = "kaggle", level: int = logging.INFO) -> logging.Log
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     if not logger.hasHandlers():
-
         # add console handler
         ch = logging.StreamHandler()
         ch.setLevel(level)

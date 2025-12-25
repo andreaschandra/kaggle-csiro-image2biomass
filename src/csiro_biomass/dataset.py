@@ -16,7 +16,6 @@ class CSIRO(Dataset):
     """CSIRO biomass dataset."""
 
     def __init__(self, config, feature_extractor=None):
-
         d_data = read_csv(config.dataset.train)
         d_data = self.data_cleanup(d_data)
         d_data = self.target_transform(d_data)
