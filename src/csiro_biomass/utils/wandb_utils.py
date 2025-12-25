@@ -1,20 +1,20 @@
 """Weights & Biases (wandb) utilities for experiment tracking."""
 
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import wandb
 
 
 def init_wandb(
     project: str,
-    name: Optional[str] = None,
-    config: Optional[dict[str, Any]] = None,
-    tags: Optional[list[str]] = None,
-    notes: Optional[str] = None,
-    entity: Optional[str] = None,
+    name: str | None = None,
+    config: dict[str, Any] | None = None,
+    tags: list[str] | None = None,
+    notes: str | None = None,
+    entity: str | None = None,
     reinit: bool = False,
-    resume: Optional[Union[bool, str]] = None,
+    resume: bool | str | None = None,
     mode: str = "online",
 ) -> wandb.Run:
     """
@@ -60,7 +60,7 @@ def init_wandb(
     return run
 
 
-def log_metrics(metrics: dict[str, Any], step: Optional[int] = None, commit: bool = True) -> None:
+def log_metrics(metrics: dict[str, Any], step: int | None = None, commit: bool = True) -> None:
     """
     Log metrics to wandb.
 
@@ -82,10 +82,10 @@ def log_metrics(metrics: dict[str, Any], step: Optional[int] = None, commit: boo
 
 
 def log_model_checkpoint(
-    checkpoint_path: Union[str, Path],
-    name: Optional[str] = None,
-    aliases: Optional[list[str]] = None,
-    metadata: Optional[dict[str, Any]] = None,
+    checkpoint_path: str | Path,
+    name: str | None = None,
+    aliases: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> wandb.Artifact:
     """
     Log a model checkpoint as a wandb artifact.
@@ -156,7 +156,7 @@ def watch_model(
     print(f"Model watching enabled (log={log}, freq={log_freq})")
 
 
-def finish_run(exit_code: Optional[int] = None, quiet: bool = False) -> None:
+def finish_run(exit_code: int | None = None, quiet: bool = False) -> None:
     """
     Finish the current wandb run.
 
@@ -216,8 +216,8 @@ def log_table(
 def log_image(
     name: str,
     image: Any,
-    caption: Optional[str] = None,
-    step: Optional[int] = None,
+    caption: str | None = None,
+    step: int | None = None,
 ) -> None:
     """
     Log an image to wandb.
