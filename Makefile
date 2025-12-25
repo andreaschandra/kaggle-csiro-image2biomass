@@ -1,3 +1,6 @@
+test:
+	pytest --tb=no --disable-warnings
+
 run:
 	python src/csiro_biomass/main.py --config configs/train.yaml
 

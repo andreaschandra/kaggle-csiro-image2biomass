@@ -82,7 +82,7 @@ class CSIRO(Dataset):
 
     def set_fold(self, i_fold):
         """Select dataset fold."""
-        self.data = self.data_fold[i_fold]
+        self.dataset = self.data_fold[i_fold]
 
     def set_split(self, split="train"):
         """Select dataset partition.
@@ -91,7 +91,7 @@ class CSIRO(Dataset):
             split (str, optional): split partition. Defaults to "train".
         """
         self.split_name = split
-        self.data, self.length = self.data[split]
+        self.data, self.length = self.dataset[split]
 
     def get_tta(self):
         """Test Time augmentation"""
