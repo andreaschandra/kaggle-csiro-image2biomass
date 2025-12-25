@@ -24,6 +24,7 @@ dev = [
     "pytest>=7.4.0",
     "ruff>=0.1.0",
     "black>=23.0.0",
+    "isort>=7.0.0",
 ]
 ml = [
     "torch>=2.0.0",
@@ -54,7 +55,3 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 ignore = ["N812"]
-
-[tool.black]
-line-length = 100
-target-version = ["py310"]

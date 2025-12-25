@@ -6,22 +6,24 @@
 .
 ├── .github/
 │   └── workflows/
-│       └── ci.yml              # GitHub Actions workflow template
+│       └── ci.yml              # GitHub Actions workflow 
 ├── configs/                    # Configuration files
 ├── data/
 │   ├── raw/                   # Raw data from Kaggle
 │   ├── processed/             # Processed/transformed data
 │   └── external/              # External data sources
+├── logs/
+├── models/
 ├── notebooks/                 # Jupyter notebooks for exploration
-├── outputs/
-│   ├── models/                # Saved model checkpoints
-│   ├── submissions/           # Kaggle submission files
-│   └── figures/               # Generated plots and visualizations
 ├── src/
 │   └── csiro_biomass/
 │       ├── models/            # Model architectures
 │       ├── features/          # Feature engineering
 │       └── utils/             # Utility functions
+├── tests/                     # Unit and Integration test
+├── .env                       # environment variables
+├── .gitignore 
+├── Makefile
 ├── pyproject.toml             # Project configuration and dependencies
 └── README.md
 
@@ -54,13 +56,10 @@ uv sync --all-extras     # Install everything
 
 ```bash
 # Run Python scripts
-uv run python src/csiro_biomass/train.py
+make run
 
-# Run Jupyter notebooks
-uv run jupyter lab
-
-# Run tests
-uv run pytest
+# Format code
+make format
 
 # Run linting
 uv run ruff check src/
@@ -74,18 +73,10 @@ uv run ruff check src/
 4. Build models in `src/csiro_biomass/models/`
 5. Generate submissions in `outputs/submissions/`
 
-## GitHub Actions
-
-The repository includes a blank GitHub Actions workflow template in `.github/workflows/ci.yml`.
-Uncomment and customize the sections as needed for:
-- Running tests
-- Linting code
-- Building and deploying models
-
 ## Dependencies
 
 Key dependencies (see `pyproject.toml` for complete list):
 - **Core**: numpy, pandas, scikit-learn, matplotlib, seaborn
-- **ML** (optional): torch, torchvision, lightning, transformers, timm
+- **ML** (optional): torch, torchvision, transformers
 - **CV** (optional): opencv-python, pillow, albumentations
-- **Dev** (optional): pytest, ruff, black, mypy
+- **Dev** (optional): pytest, ruff, black, isort
