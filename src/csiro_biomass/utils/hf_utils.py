@@ -1,19 +1,17 @@
 """HuggingFace Hub utilities for model checkpoint management."""
 
-import os
 from pathlib import Path
-from typing import Optional, Union
 
-from huggingface_hub import HfApi, create_repo, upload_file, upload_folder
+from huggingface_hub import create_repo, upload_file, upload_folder
 
 
 def upload_checkpoint_to_hf(
-    checkpoint_path: Union[str, Path],
-    repo_id: str,
-    path_in_repo: Optional[str] = None,
-    commit_message: Optional[str] = None,
+    checkpoint_path: str | Path,
+    repo_id: str = None,
+    path_in_repo: str | None = None,
+    commit_message: str | None = None,
     create_pr: bool = False,
-    token: Optional[str] = None,
+    token: str | None = None,
 ) -> str:
     """
     Upload a model checkpoint file to HuggingFace Hub.
@@ -64,12 +62,12 @@ def upload_checkpoint_to_hf(
 
 
 def upload_model_folder_to_hf(
-    folder_path: Union[str, Path],
+    folder_path: str | Path,
     repo_id: str,
-    commit_message: Optional[str] = None,
+    commit_message: str | None = None,
     create_pr: bool = False,
-    token: Optional[str] = None,
-    ignore_patterns: Optional[list[str]] = None,
+    token: str | None = None,
+    ignore_patterns: list[str] | None = None,
 ) -> str:
     """
     Upload an entire model folder to HuggingFace Hub.
@@ -121,7 +119,7 @@ def upload_model_folder_to_hf(
 def create_hf_model_repo(
     repo_id: str,
     private: bool = False,
-    token: Optional[str] = None,
+    token: str | None = None,
     exist_ok: bool = True,
 ) -> str:
     """
