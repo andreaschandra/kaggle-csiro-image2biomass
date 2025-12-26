@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 
 import torch
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -27,6 +28,7 @@ class Pipeline:
         self.model = None
         self.optimizer = None
         self.criterion = None
+        self.early_stopping = EarlyStopping(logger, patience=10, min_delta=0.09)
 
         self.set_dataset()
         self.set_model()
@@ -44,6 +46,7 @@ class Pipeline:
             "valid_loss": 0,
             "train_r2": 0,
             "valid_r2": 0,
+            "duration": 0,
         }
 
     def set_dataset(self):
@@ -64,6 +67,14 @@ class Pipeline:
         """Set up optimizer."""
         self.logger.info("Load optimizer")
         self.optimizer = Optimizer(self.model, params=self.config.optimizer.params)
+        scheduler_params = {
+            "mode": "max",
+            "factor": 0.5,
+            "patience": 5,
+            "threshold": 0.001,
+            "min_lr": 0.00001,
+        }
+        self.scheduler = ReduceLROnPlateau(self.optimizer, **scheduler_params)
 
     def set_criterion(self):
         """Set up criterion."""
@@ -97,7 +108,6 @@ class Pipeline:
 
             loss.backward()
             self.optimizer.step()
-            break
 
         return
 
@@ -124,26 +134,21 @@ class Pipeline:
 
             r2 = compute_weighted_r2(out, y)
             self.metrics["valid_r2"] += (r2 - self.metrics["valid_r2"]) / batch_index
-            break
 
     def epoch(self, fold, i_epoch):
         """Run a single epoch of training and validation."""
 
         self.logger.info("Epoch method called")
         start = time.perf_counter()
+
         self.set_epoch_metrics()
         self.train(fold)
         self.valid(fold)
-        duration = time.perf_counter() - start
-        self.data_metrics.append(self.metrics.copy())
+        self.scheduler.step(self.metrics["valid_r2"])
 
-        self.logger.info(f"Epoch: {i_epoch} | Time: {duration:.1f}s")
-        self.logger.info(
-            f"\t Train loss: {self.metrics['train_loss']} | R2: {self.metrics['train_r2']}"
-        )
-        self.logger.info(
-            f"\t Valid loss: {self.metrics['valid_loss']} | R2: {self.metrics['valid_r2']}"
-        )
+        duration = time.perf_counter() - start
+        self.metrics["duration"] = duration
+        self.data_metrics.append(self.metrics.copy())
 
     def routine(self, fold):
         """Run the full training routine."""
@@ -151,6 +156,34 @@ class Pipeline:
             self.logger.info(f"Starting epoch {i_epoch}")
             self.epoch(fold, i_epoch)
             self.logger.info(f"Finished epoch {i_epoch}")
+
+            if self.early_stopping(self.metrics["valid_r2"], i_epoch):
+                self.logger.info(f"Early stopping at epoch {i_epoch}")
+
+                self.logger.info(
+                    f"Epoch: {i_epoch} | "
+                    f"lr: {self.scheduler.get_last_lr()} | "
+                    f"Time: {self.metrics['duration']:.1f}s"
+                )
+                self.logger.info(
+                    f"\tTrain loss: {self.metrics['train_loss']} | R2: {self.metrics['train_r2']}"
+                )
+                self.logger.info(
+                    f"\tValid loss: {self.metrics['valid_loss']} | R2: {self.metrics['valid_r2']}"
+                )
+                break
+
+            self.logger.info(
+                f"Epoch: {i_epoch} | "
+                f"lr: {self.scheduler.get_last_lr()} | "
+                f"Time: {self.metrics['duration']:.1f}s"
+            )
+            self.logger.info(
+                f"\tTrain loss: {self.metrics['train_loss']} | R2: {self.metrics['train_r2']}"
+            )
+            self.logger.info(
+                f"\tValid loss: {self.metrics['valid_loss']} | R2: {self.metrics['valid_r2']}"
+            )
 
     def cross_validate(self):
         """Run cross-validation."""
@@ -168,3 +201,25 @@ class Pipeline:
             self.model.save(
                 path=f"{self.config.general.model_dir}/{run_at}/{run_at}_fold-{fold}.pt"
             )
+
+
+class EarlyStopping:
+    def __init__(self, logger=None, patience=5, min_delta=0.09):
+        self.logger = logger
+        self.patience = patience
+        self.min_delta = min_delta
+        self.best_score = None
+        self.counter = 0
+
+    def __call__(self, val_score, epoch):
+        if self.best_score is None:
+            self.best_score = val_score
+        elif (val_score < self.best_score + self.min_delta) and (epoch > 30):
+            self.counter += 1
+            print("EarlyStopping Counter:", self.counter)
+            if self.counter >= self.patience:
+                return True
+        else:
+            self.best_score = val_score
+            self.counter = 0
+        return False
