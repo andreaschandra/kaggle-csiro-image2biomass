@@ -6,18 +6,42 @@ from dotenv import load_dotenv
 
 from csiro_biomass.config import Config
 from csiro_biomass.pipeline import Pipeline
+from csiro_biomass.utils.git import get_current_commit_hash
+from csiro_biomass.utils.hf_utils import upload_model_folder_to_hf
 from csiro_biomass.utils.logger import setup_logger
+from csiro_biomass.utils.wandb_utils import finish_run, init_wandb
 
 
 def main(args_main):
     """Main function to run the CSIRO Biomass project."""
     logger = setup_logger()
+    config = Config.load_from_file(args_main.config)
+
+    wandb_run = init_wandb(
+        entity=config.wandb.entity,
+        project=config.wandb.project,
+        name=config.general.run_at,
+        config=config,
+    )
+
     logger.info("Starting CSIRO Biomass project...")
     logger.info("Load config")
-    config = Config.load_from_file(args_main.config)
     logger.info("Setup pipeline")
-    pl = Pipeline(config, logger)
-    pl.cross_validate()
+    pl = Pipeline(config, logger, wandb_run)
+
+    logger.info("Run cross validation")
+    run_at, model_dir = pl.cross_validate()
+
+    logger.info("Upload model to Huggingface Hub")
+    commit_hash = get_current_commit_hash()
+    upload_model_folder_to_hf(
+        repo_id=config.huggingface.repo_id,
+        folder_path=model_dir,
+        commit_message=f"model {run_at} {commit_hash}",
+        tag=run_at,
+    )
+
+    finish_run()
 
 
 def arg_parser():

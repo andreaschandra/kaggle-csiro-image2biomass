@@ -1,8 +1,9 @@
 """HuggingFace Hub utilities for model checkpoint management."""
 
+import os
 from pathlib import Path
 
-from huggingface_hub import create_repo, upload_file, upload_folder
+from huggingface_hub import HfApi, create_repo, login, upload_file
 
 
 def upload_checkpoint_to_hf(
@@ -62,12 +63,10 @@ def upload_checkpoint_to_hf(
 
 
 def upload_model_folder_to_hf(
-    folder_path: str | Path,
     repo_id: str,
+    folder_path: str | Path,
     commit_message: str | None = None,
-    create_pr: bool = False,
-    token: str | None = None,
-    ignore_patterns: list[str] | None = None,
+    tag: str = "main",
 ) -> str:
     """
     Upload an entire model folder to HuggingFace Hub.
@@ -103,13 +102,19 @@ def upload_model_folder_to_hf(
         commit_message = f"Upload model from {folder_path.name}"
 
     # Upload folder
-    url = upload_folder(
-        folder_path=str(folder_path),
+    print(os.getenv("HF_TOKEN"))
+    login(token=os.getenv("HF_TOKEN"))
+
+    client = HfApi()
+
+    client.create_branch(repo_id=repo_id, branch=tag, repo_type="model")
+
+    url = client.upload_folder(
         repo_id=repo_id,
+        folder_path=folder_path,
+        repo_type="model",
         commit_message=commit_message,
-        create_pr=create_pr,
-        token=token,
-        ignore_patterns=ignore_patterns,
+        revision=tag,
     )
 
     print(f"Model folder uploaded to: {url}")

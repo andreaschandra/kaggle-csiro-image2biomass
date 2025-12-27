@@ -1,21 +1,19 @@
 """Weights & Biases (wandb) utilities for experiment tracking."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import wandb
 
 
 def init_wandb(
+    entity: str,
     project: str,
-    name: str | None = None,
-    config: dict[str, Any] | None = None,
-    tags: list[str] | None = None,
-    notes: str | None = None,
-    entity: str | None = None,
+    name: str = "default-run",
+    config: dict[str, Any] | Any | None = None,
+    tags: list[str] | None = ["training"],
     reinit: bool = False,
-    resume: bool | str | None = None,
-    mode: str = "online",
+    mode: Literal["online", "offline", "disabled", "shared"] | None = "online",
 ) -> wandb.Run:
     """
     Initialize a wandb run for experiment tracking.
@@ -44,19 +42,23 @@ def init_wandb(
         ... )
     """
     run = wandb.init(
+        entity=entity,
         project=project,
         name=name,
-        config=config,
+        config=config.to_dict(),
         tags=tags,
-        notes=notes,
-        entity=entity,
         reinit=reinit,
-        resume=resume,
         mode=mode,
     )
 
-    print(f"wandb run initialized: {run.name} ({run.id})")
-    print(f"View at: {run.url}")
+    for i in range(config.dataset.kfolds):
+        run.define_metric(name=f"fold-{i}/epoch")
+        run.define_metric(name=f"fold-{i}/train_loss", step_metric=f"fold-{i}/epoch")
+        run.define_metric(name=f"fold-{i}/train_r2", step_metric=f"fold-{i}/epoch")
+        run.define_metric(name=f"fold-{i}/valid_loss", step_metric=f"fold-{i}/epoch")
+        run.define_metric(name=f"fold-{i}/valid_r2", step_metric=f"fold-{i}/epoch")
+        run.define_metric(name=f"fold-{i}/duration", step_metric=f"fold-{i}/epoch")
+
     return run
 
 

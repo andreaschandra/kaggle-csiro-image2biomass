@@ -1,7 +1,7 @@
 """Pipeline module for training, validation, and testing."""
 
+import os
 import time
-from datetime import datetime
 
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -19,14 +19,16 @@ from csiro_biomass.optimizer import Optimizer
 class Pipeline:
     """Main pipeline to run training, validation, and testing."""
 
-    def __init__(self, config, logger):
+    def __init__(self, config, logger, wandb_logger):
         self.config = config
         self.logger = logger
+        self.wandb_logger = wandb_logger
 
         self.feature_extractor = None
         self.dataset = None
         self.model = None
         self.optimizer = None
+        self.scheduler = None
         self.criterion = None
         self.early_stopping = EarlyStopping(logger, patience=10, min_delta=0.09)
 
@@ -36,17 +38,16 @@ class Pipeline:
         self.set_criterion()
 
         self.metrics = None
-        self.set_epoch_metrics()
-        self.data_metrics = []
 
-    def set_epoch_metrics(self):
+    def set_epoch_metrics(self, fold):
         """Set up metrics for each epoch."""
         self.metrics = {
-            "train_loss": 0,
-            "valid_loss": 0,
-            "train_r2": 0,
-            "valid_r2": 0,
-            "duration": 0,
+            f"fold-{fold}/train_loss": 0,
+            f"fold-{fold}/valid_loss": 0,
+            f"fold-{fold}/train_r2": 0,
+            f"fold-{fold}/valid_r2": 0,
+            f"fold-{fold}/duration": 0,
+            f"fold-{fold}/epoch": 0,
         }
 
     def set_dataset(self):
@@ -59,6 +60,7 @@ class Pipeline:
     def set_model(self):
         """Set up model regressor."""
         self.logger.info("Load MLP regressor model")
+        del self.model
         self.model = MLP(emb_size=self.feature_extractor.get_embedding_dim()).to(
             self.config.general.device
         )
@@ -66,6 +68,7 @@ class Pipeline:
     def set_optimizer(self):
         """Set up optimizer."""
         self.logger.info("Load optimizer")
+        del self.optimizer
         self.optimizer = Optimizer(self.model, params=self.config.optimizer.params)
         scheduler_params = {
             "mode": "max",
@@ -74,6 +77,7 @@ class Pipeline:
             "threshold": 0.001,
             "min_lr": 0.00001,
         }
+        del self.scheduler
         self.scheduler = ReduceLROnPlateau(self.optimizer, **scheduler_params)
 
     def set_criterion(self):
@@ -101,15 +105,18 @@ class Pipeline:
 
             out = self.model(x)
             loss = self.criterion(out, y)
-            self.metrics["train_loss"] += (loss.item() - self.metrics["train_loss"]) / batch_index
+            self.metrics[f"fold-{fold}/train_loss"] += (
+                loss.item() - self.metrics[f"fold-{fold}/train_loss"]
+            ) / batch_index
 
             r2 = compute_weighted_r2(out, y)
-            self.metrics["train_r2"] += (r2 - self.metrics["train_r2"]) / batch_index
+            self.metrics[f"fold-{fold}/train_r2"] += (
+                r2 - self.metrics[f"fold-{fold}/train_r2"]
+            ) / batch_index
 
             loss.backward()
             self.optimizer.step()
-
-        return
+            break
 
     def valid(self, fold):
         """Validate the model."""
@@ -130,77 +137,89 @@ class Pipeline:
                 out = out.mean(dim=1)
 
             loss = self.criterion(out, y)
-            self.metrics["valid_loss"] += (loss.item() - self.metrics["valid_loss"]) / batch_index
+            self.metrics[f"fold-{fold}/valid_loss"] += (
+                loss.item() - self.metrics[f"fold-{fold}/valid_loss"]
+            ) / batch_index
 
             r2 = compute_weighted_r2(out, y)
-            self.metrics["valid_r2"] += (r2 - self.metrics["valid_r2"]) / batch_index
+            self.metrics[f"fold-{fold}/valid_r2"] += (
+                r2 - self.metrics[f"fold-{fold}/valid_r2"]
+            ) / batch_index
+            break
 
     def epoch(self, fold, i_epoch):
         """Run a single epoch of training and validation."""
 
         self.logger.info("Epoch method called")
+        self.set_epoch_metrics(fold=fold)
         start = time.perf_counter()
 
-        self.set_epoch_metrics()
         self.train(fold)
         self.valid(fold)
-        self.scheduler.step(self.metrics["valid_r2"])
+        self.scheduler.step(self.metrics[f"fold-{fold}/valid_r2"])
 
         duration = time.perf_counter() - start
-        self.metrics["duration"] = duration
-        self.data_metrics.append(self.metrics.copy())
+        self.metrics[f"fold-{fold}/duration"] = duration
 
     def routine(self, fold):
         """Run the full training routine."""
         for i_epoch in tqdm(range(1, self.config.trainer.epoch + 1)):
             self.logger.info(f"Starting epoch {i_epoch}")
             self.epoch(fold, i_epoch)
+            self.metrics[f"fold-{fold}/epoch"] = i_epoch
             self.logger.info(f"Finished epoch {i_epoch}")
 
-            if self.early_stopping(self.metrics["valid_r2"], i_epoch):
+            if self.early_stopping(self.metrics[f"fold-{fold}/valid_r2"], i_epoch):
                 self.logger.info(f"Early stopping at epoch {i_epoch}")
 
                 self.logger.info(
                     f"Epoch: {i_epoch} | "
                     f"lr: {self.scheduler.get_last_lr()} | "
-                    f"Time: {self.metrics['duration']:.1f}s"
+                    f"Time: {self.metrics[f'fold-{fold}/duration']:.1f}s"
                 )
                 self.logger.info(
-                    f"\tTrain loss: {self.metrics['train_loss']} | R2: {self.metrics['train_r2']}"
+                    f"\tTrain loss: {self.metrics[f'fold-{fold}/train_loss']} | "
+                    f" R2: {self.metrics[f'fold-{fold}/train_r2']}"
                 )
                 self.logger.info(
-                    f"\tValid loss: {self.metrics['valid_loss']} | R2: {self.metrics['valid_r2']}"
+                    f"\tValid loss: {self.metrics[f'fold-{fold}/valid_loss']} | "
+                    f" R2: {self.metrics[f'fold-{fold}/valid_r2']}"
                 )
                 break
 
             self.logger.info(
                 f"Epoch: {i_epoch} | "
                 f"lr: {self.scheduler.get_last_lr()} | "
-                f"Time: {self.metrics['duration']:.1f}s"
+                f"Time: {self.metrics[f'fold-{fold}/duration']:.1f}s"
             )
             self.logger.info(
-                f"\tTrain loss: {self.metrics['train_loss']} | R2: {self.metrics['train_r2']}"
+                f"\tTrain loss: {self.metrics[f'fold-{fold}/train_loss']} | "
+                f"R2: {self.metrics[f'fold-{fold}/train_r2']}"
             )
             self.logger.info(
-                f"\tValid loss: {self.metrics['valid_loss']} | R2: {self.metrics['valid_r2']}"
+                f"\tValid loss: {self.metrics[f'fold-{fold}/valid_loss']} | "
+                f"R2: {self.metrics[f'fold-{fold}/valid_r2']}"
             )
+            self.wandb_logger.log(self.metrics, commit=True)
 
     def cross_validate(self):
         """Run cross-validation."""
 
         self.logger.info("Cross-validation started")
-        ### reset all components
+
+        # reset all components
         self.set_dataset()
         self.set_model()
         self.set_optimizer()
         self.set_criterion()
-        run_at = datetime.now().strftime("%Y%m%d-%H%M%S")
+        run_at = self.config.general.run_at
+        model_dir = os.path.join(self.config.general.model_dir, run_at)
         for fold in range(self.config.dataset.kfolds):
-            self.logger.info(f"Starting fold {fold + 1}/{self.config.general.kfolds}")
+            self.logger.info(f"Starting fold {fold}/{self.config.general.kfolds}")
             self.routine(fold)
-            self.model.save(
-                path=f"{self.config.general.model_dir}/{run_at}/{run_at}_fold-{fold}.pt"
-            )
+            self.model.save(path=os.path.join(model_dir, f"{run_at}_fold-{fold}.pt"))
+
+        return run_at, model_dir
 
 
 class EarlyStopping:

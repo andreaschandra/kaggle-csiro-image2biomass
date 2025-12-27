@@ -1,7 +1,8 @@
 """Configuration classes for CSIRO Biomass project."""
 
 import os
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from datetime import datetime
 
 import torch
 
@@ -22,6 +23,8 @@ class General:
     def __post_init__(self):
         """Post initialization processing."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.run_at = datetime.now().strftime("%Y%m%d-%H%M%S")
+
         if os.path.exists(self.model_dir) is False:
             os.makedirs(self.model_dir)
 
@@ -76,6 +79,21 @@ class Loss:
 
 
 @dataclass
+class Hugginface:
+    """Huggingface configuration."""
+
+    repo_id: str = None
+
+
+@dataclass
+class Wandb:
+    """Weights and Biases configuration."""
+
+    project: str = None
+    entity: str = None
+
+
+@dataclass
 class Config:
     """Main configuration."""
 
@@ -86,18 +104,26 @@ class Config:
     optimizer: Optimizer
     scheduler: Scheduler
     loss: Loss
+    huggingface: Hugginface
+    wandb: Wandb
 
-    @staticmethod
-    def load_from_file(path):
+    def to_dict(self) -> dict:
+        """Convert config to dictionary recursively."""
+        return asdict(self)
+
+    @classmethod
+    def load_from_file(cls, path):
         """Load from a YAML file."""
 
         config_dict = read_yaml(path)
-        Config.general = General(**config_dict.get("general", {}))
-        Config.feature_extractor = FeatureExtractor(**config_dict.get("feature_extractor", {}))
-        Config.dataset = Dataset(**config_dict.get("dataset", {}))
-        Config.trainer = Trainer(**config_dict.get("trainer", {}))
-        Config.optimizer = Optimizer(**config_dict.get("optimizer", {}))
-        Config.scheduler = Scheduler(**config_dict.get("scheduler", {}))
-        Config.loss = Loss(**config_dict.get("loss", {}))
-
-        return Config
+        return cls(
+            general=General(**config_dict.get("general", {})),
+            feature_extractor=FeatureExtractor(**config_dict.get("feature_extractor", {})),
+            dataset=Dataset(**config_dict.get("dataset", {})),
+            trainer=Trainer(**config_dict.get("trainer", {})),
+            optimizer=Optimizer(**config_dict.get("optimizer", {})),
+            scheduler=Scheduler(**config_dict.get("scheduler", {})),
+            loss=Loss(**config_dict.get("loss", {})),
+            huggingface=Hugginface(**config_dict.get("huggingface", {})),
+            wandb=Wandb(**config_dict.get("wandb", {})),
+        )
