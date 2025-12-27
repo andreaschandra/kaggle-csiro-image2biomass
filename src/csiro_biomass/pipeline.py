@@ -60,7 +60,6 @@ class Pipeline:
     def set_model(self):
         """Set up model regressor."""
         self.logger.info("Load MLP regressor model")
-        del self.model
         self.model = MLP(emb_size=self.feature_extractor.get_embedding_dim()).to(
             self.config.general.device
         )
@@ -208,7 +207,6 @@ class Pipeline:
         self.logger.info("Cross-validation started")
 
         # reset all components
-        self.set_dataset()
         self.set_model()
         self.set_optimizer()
         self.set_criterion()

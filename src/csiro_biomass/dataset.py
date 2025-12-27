@@ -25,7 +25,7 @@ class CSIRO(Dataset):
 
         self.data_fold = {}
         skf = StratifiedKFold(
-            n_splits=config.dataset.kfolds, shuffle=True, random_state=config.general.seed
+            n_splits=config.dataset.kfolds, shuffle=False, random_state=config.general.seed
         )
         for i_fold, (t_index, v_index) in enumerate(skf.split(d_data, d_data.outlier)):
             train = d_data.iloc[t_index]
