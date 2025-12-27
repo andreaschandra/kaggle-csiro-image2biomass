@@ -221,7 +221,7 @@ class Pipeline:
 
 
 class EarlyStopping:
-    def __init__(self, logger=None, patience=5, min_delta=0.09):
+    def __init__(self, logger=None, patience=5, min_delta=0.009):
         self.logger = logger
         self.patience = patience
         self.min_delta = min_delta
@@ -231,7 +231,7 @@ class EarlyStopping:
     def __call__(self, val_score, epoch):
         if self.best_score is None:
             self.best_score = val_score
-        elif (val_score < self.best_score + self.min_delta) and (epoch > 30):
+        elif (val_score < self.best_score + self.min_delta) and (epoch > 50):
             self.counter += 1
             print("EarlyStopping Counter:", self.counter)
             if self.counter >= self.patience:
