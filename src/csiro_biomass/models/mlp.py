@@ -25,6 +25,8 @@ class MLP(nn.Module):
             nn.ReLU(),
         )
 
+        self.model.apply(self.weights_init)
+
     def forward(self, input_x):
         """Forward pass."""
         out = self.model(input_x)
@@ -36,3 +38,7 @@ class MLP(nn.Module):
         if os.path.exists(os.path.dirname(path)) is False:
             os.makedirs(os.path.dirname(path))
         torch.save(self.model.state_dict(), path)
+
+    def weights_init(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform(m.weight.data)
