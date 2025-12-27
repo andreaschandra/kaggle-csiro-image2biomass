@@ -1,3 +1,7 @@
+install:
+	curl -LsSf https://astral.sh/uv/install.sh | sh
+	uv sync --all-extras
+
 test:
 	pytest --tb=no --disable-warnings
 

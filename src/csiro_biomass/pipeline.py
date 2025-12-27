@@ -115,7 +115,6 @@ class Pipeline:
 
             loss.backward()
             self.optimizer.step()
-            break
 
     def valid(self, fold):
         """Validate the model."""
@@ -144,7 +143,6 @@ class Pipeline:
             self.metrics[f"fold-{fold}/valid_r2"] += (
                 r2 - self.metrics[f"fold-{fold}/valid_r2"]
             ) / batch_index
-            break
 
     def epoch(self, fold, i_epoch):
         """Run a single epoch of training and validation."""
