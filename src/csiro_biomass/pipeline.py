@@ -60,6 +60,7 @@ class Pipeline:
     def set_model(self):
         """Set up model regressor."""
         self.logger.info("Load MLP regressor model")
+        torch.cuda.empty_cache()
         self.model = MLP(emb_size=self.feature_extractor.get_embedding_dim()).to(
             self.config.general.device
         )
@@ -67,7 +68,7 @@ class Pipeline:
     def set_optimizer(self):
         """Set up optimizer."""
         self.logger.info("Load optimizer")
-        del self.optimizer
+        torch.cuda.empty_cache()
         self.optimizer = Optimizer(self.model, params=self.config.optimizer.params)
         scheduler_params = {
             "mode": "max",
@@ -76,7 +77,6 @@ class Pipeline:
             "threshold": 0.001,
             "min_lr": 0.00001,
         }
-        del self.scheduler
         self.scheduler = ReduceLROnPlateau(self.optimizer, **scheduler_params)
 
     def set_criterion(self):
@@ -203,14 +203,14 @@ class Pipeline:
         """Run cross-validation."""
 
         self.logger.info("Cross-validation started")
-
-        # reset all components
-        self.set_model()
-        self.set_optimizer()
-        self.set_criterion()
         run_at = self.config.general.run_at
         model_dir = os.path.join(self.config.general.model_dir, run_at)
         for fold in range(self.config.dataset.kfolds):
+            # reset all components
+            self.set_model()
+            self.set_optimizer()
+            self.set_criterion()
+
             self.logger.info(f"Starting fold {fold}/{self.config.general.kfolds}")
             self.routine(fold)
             self.model.save(path=os.path.join(model_dir, f"{run_at}_fold-{fold}.pt"))
@@ -229,9 +229,9 @@ class EarlyStopping:
     def __call__(self, val_score, epoch):
         if self.best_score is None:
             self.best_score = val_score
-        elif (val_score < self.best_score + self.min_delta) and (epoch > 50):
+        elif (val_score < self.best_score + self.min_delta) and (epoch > 80):
             self.counter += 1
-            print("EarlyStopping Counter:", self.counter)
+            self.logger.info("EarlyStopping Counter:", self.counter)
             if self.counter >= self.patience:
                 return True
         else:

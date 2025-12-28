@@ -18,7 +18,6 @@ class MLP(nn.Module):
             nn.Dropout(0.2),
             nn.Linear(1024, 512),
             nn.LeakyReLU(),
-            nn.Dropout(0.2),
             nn.Linear(512, 256),
             nn.LeakyReLU(),
             nn.Linear(256, 3),
