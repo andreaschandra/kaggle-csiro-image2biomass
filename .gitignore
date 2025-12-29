@@ -232,6 +232,7 @@ wandb/
 mlruns/
 
 # custom
+.vscode
 uv.lock
 ./models/
 configs/*.yaml
