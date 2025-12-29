@@ -14,6 +14,7 @@ from csiro_biomass.loss import WeightedHuberLoss
 from csiro_biomass.metrics import compute_weighted_r2
 from csiro_biomass.models.mlp import MLP
 from csiro_biomass.optimizer import Optimizer
+from csiro_biomass.utils.io import save_model
 
 
 class Pipeline:
@@ -213,7 +214,7 @@ class Pipeline:
 
             self.logger.info(f"Starting fold {fold}/{self.config.general.kfolds}")
             self.routine(fold)
-            self.model.save(path=os.path.join(model_dir, f"{run_at}_fold-{fold}.pt"))
+            save_model(path=os.path.join(model_dir, f"{run_at}_fold-{fold}.pt"), model=self.model)
 
         return run_at, model_dir
 

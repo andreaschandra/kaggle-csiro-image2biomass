@@ -1,6 +1,9 @@
 """IO utilities."""
 
+import os
+
 import pandas as pd
+import torch
 import yaml
 
 
@@ -22,3 +25,12 @@ def read_csv(path):
 def write_csv(path, df):
     """Write DataFrame to CSV file."""
     df.to_csv(path, index=False)
+
+
+def save_model(path, model):
+    """Save model to file."""
+
+    if os.path.exists(os.path.dirname(path)) is False:
+        os.makedirs(os.path.dirname(path))
+
+    torch.save(model.model.state_dict(), path)
