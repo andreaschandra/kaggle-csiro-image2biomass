@@ -94,6 +94,13 @@ class Wandb:
 
 
 @dataclass
+class Kaggle:
+    """Kaggle configuration."""
+
+    model_name: str = None
+
+
+@dataclass
 class Config:
     """Main configuration."""
 

@@ -8,8 +8,9 @@ from csiro_biomass.config import Config
 from csiro_biomass.pipeline import Pipeline
 from csiro_biomass.utils.git import get_current_commit_hash
 from csiro_biomass.utils.hf_utils import upload_model_folder_to_hf
+from csiro_biomass.utils.kaggle_utils import upload_model_dir_to_kaggle
 from csiro_biomass.utils.logger import setup_logger
-from csiro_biomass.utils.wandb_utils import finish_run, init_wandb
+from csiro_biomass.utils.wandb_utils import init_wandb
 
 
 def main(args_main):
@@ -40,8 +41,12 @@ def main(args_main):
         commit_message=f"model {run_at} {commit_hash}",
         tag=run_at,
     )
-
-    finish_run()
+    upload_model_dir_to_kaggle(
+        model_name=config.general.competition,
+        version=run_at,
+        model_dir=model_dir,
+    )
+    # finish_run()
 
 
 def arg_parser():

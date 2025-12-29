@@ -6,10 +6,7 @@ from csiro_biomass.utils.hf_utils import (
     upload_checkpoint_to_hf,
     upload_model_folder_to_hf,
 )
-from csiro_biomass.utils.kaggle_utils import (
-    download_kaggle_competition_data,
-    download_kaggle_dataset,
-)
+from csiro_biomass.utils.kaggle_utils import download_kaggle_competition_data
 from csiro_biomass.utils.wandb_utils import (
     finish_run,
     init_wandb,
@@ -23,7 +20,6 @@ from csiro_biomass.utils.wandb_utils import (
 
 __all__ = [
     # Kaggle utilities
-    "download_kaggle_dataset",
     "download_kaggle_competition_data",
     # HuggingFace utilities
     "upload_checkpoint_to_hf",
