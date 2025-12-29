@@ -21,31 +21,6 @@ def authenticate_kaggle() -> None:
     set_kaggle_credentials(username=os.getenv("KAGGLE_USERNAME"), api_key=os.getenv("KAGGLE_KEY"))
 
 
-def download_kaggle_dataset(dataset: str) -> Path:
-    """
-    Download a Kaggle dataset using kagglehub.
-
-    Note: kagglehub manages its own cache directory and downloads to a standard location.
-    The downloaded data will be cached and reused on subsequent calls.
-
-    Args:
-        dataset: Dataset identifier in format 'owner/dataset-name'
-
-    Returns:
-        Path to the downloaded dataset directory in kagglehub's cache
-
-    Example:
-        >>> from csiro_biomass.utils.kaggle_utils import download_kaggle_dataset
-        >>> dataset_path = download_kaggle_dataset("csiro/image2biomass")
-        >>> print(f"Dataset available at: {dataset_path}")
-    """
-    # Download dataset using kagglehub
-    download_path = kagglehub.dataset_download(dataset)
-
-    print(f"Dataset '{dataset}' available at {download_path}")
-    return Path(download_path)
-
-
 def download_kaggle_competition_data(competition: str) -> Path:
     """
     Download Kaggle competition data using kagglehub.
@@ -69,3 +44,20 @@ def download_kaggle_competition_data(competition: str) -> Path:
 
     print(f"Competition '{competition}' data available at {download_path}")
     return Path(download_path)
+
+
+def upload_model_dir_to_kaggle(model_name: str, version: str, model_dir) -> None:
+    """
+    Upload a model directory to Kaggle using kagglehub.
+
+    Args:
+        model_handle: Model identifier in format 'owner/model-name'
+        model_dir: Path to the local model directory to upload
+
+    Example:
+        >>> from csiro_biomass.utils.kaggle_utils import upload_model_dir_to_kaggle
+        >>> from pathlib import Path
+        >>> upload_model_dir_to_kaggle("csiro/my-model", Path("/path/to/my/model"))
+    """
+    model_handle = os.path.join("andreaschandra", model_name, "pyTorch", version)
+    kagglehub.model_upload(model_handle, model_dir)
