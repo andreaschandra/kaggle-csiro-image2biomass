@@ -20,9 +20,18 @@ class DinoFeatureExtractor:
         if aug_func:
             img = aug_func(image=img)["image"]
 
-        img1 = img[:, :1000]
-        img2 = img[:, 1000:]
-        inputs = self.processor(images=[img1, img2], return_tensors="pt")
+        img1 = img[:500, :500].copy()
+        img2 = img[:500, 500:1000].copy()
+        img3 = img[:500, 1000:1500].copy()
+        img4 = img[:500, 1500:].copy()
+
+        img5 = img[500:, :500].copy()
+        img6 = img[500:, 500:1000].copy()
+        img7 = img[500:, 1000:1500].copy()
+        img8 = img[500:, 1500:].copy()
+        inputs = self.processor(
+            images=[img, img1, img2, img3, img4, img5, img6, img7, img8], return_tensors="pt"
+        )
         inputs = inputs.to(self.config.general.device)
 
         with torch.no_grad():
