@@ -9,10 +9,10 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from csiro_biomass.dataset import CSIRO
-from csiro_biomass.features.dino import DinoFeatureExtractor
+from csiro_biomass.features import get_feature_extractor
 from csiro_biomass.loss import WeightedHuberLoss
 from csiro_biomass.metrics import compute_weighted_r2
-from csiro_biomass.models.mlp import MLP
+from csiro_biomass.models import get_model_regressor
 from csiro_biomass.optimizer import Optimizer
 from csiro_biomass.utils.io import save_model
 
@@ -53,18 +53,19 @@ class Pipeline:
 
     def set_dataset(self):
         """Set up the dataset and feature extractor."""
-        self.logger.info("Load feature extractor")
-        self.feature_extractor = DinoFeatureExtractor(self.config)
+        if self.config.feature_extractor.is_enabled:
+            self.logger.info("Load feature extractor")
+            self.feature_extractor = get_feature_extractor(self.config)
+
         self.logger.info("Load Dataset")
-        self.dataset = CSIRO(self.config, self.feature_extractor)
+        self.dataset = CSIRO(self.config, self.logger, self.feature_extractor)
 
     def set_model(self):
         """Set up model regressor."""
         self.logger.info("Load MLP regressor model")
         torch.cuda.empty_cache()
-        self.model = MLP(emb_size=self.feature_extractor.get_embedding_dim()).to(
-            self.config.general.device
-        )
+        self.model = get_model_regressor(self.config, self.feature_extractor.get_embedding_dim())
+        self.model = self.model.to(self.config.general.device)
 
     def set_optimizer(self):
         """Set up optimizer."""
@@ -145,7 +146,7 @@ class Pipeline:
                 r2 - self.metrics[f"fold-{fold}/valid_r2"]
             ) / batch_index
 
-    def epoch(self, fold, i_epoch):
+    def epoch(self, fold):
         """Run a single epoch of training and validation."""
 
         self.logger.info("Epoch method called")
@@ -163,7 +164,7 @@ class Pipeline:
         """Run the full training routine."""
         for i_epoch in tqdm(range(1, self.config.trainer.epoch + 1)):
             self.logger.info(f"Starting epoch {i_epoch}")
-            self.epoch(fold, i_epoch)
+            self.epoch(fold)
             self.metrics[f"fold-{fold}/epoch"] = i_epoch
             self.logger.info(f"Finished epoch {i_epoch}")
 
@@ -211,7 +212,6 @@ class Pipeline:
             self.set_model()
             self.set_optimizer()
             self.set_criterion()
-
             self.logger.info(f"Starting fold {fold}/{self.config.general.kfolds}")
             self.routine(fold)
             save_model(path=os.path.join(model_dir, f"{run_at}_fold-{fold}.pt"), model=self.model)

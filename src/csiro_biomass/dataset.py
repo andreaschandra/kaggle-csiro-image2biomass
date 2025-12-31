@@ -9,6 +9,7 @@ from PIL import Image
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import Dataset
 
+from csiro_biomass.utils.img_proc import convert_to_8_tile
 from csiro_biomass.utils.io import read_csv
 from csiro_biomass.utils.kaggle_utils import authenticate_kaggle, download_kaggle_competition_data
 
@@ -16,8 +17,9 @@ from csiro_biomass.utils.kaggle_utils import authenticate_kaggle, download_kaggl
 class CSIRO(Dataset):
     """CSIRO biomass dataset."""
 
-    def __init__(self, config, feature_extractor=None):
+    def __init__(self, config, logger=None, feature_extractor=None):
         self.config = config
+        self.logger = logger
         self.is_dataset_exist()
         d_data = read_csv(self.config.dataset.train)
         d_data = self.data_cleanup(d_data)
@@ -120,22 +122,33 @@ class CSIRO(Dataset):
         img_path = self.data.iloc[idx, 0]
         img_full_path = os.path.join(self.img_dir_path, img_path)
         img = Image.open(img_full_path)
-        img_arr = np.array(img)
 
-        if (self.split_name == "valid") and self.transform:
-            emb_list = []
-            for aug in self.transform:
-                img_arr = aug(image=img_arr)["image"]
-                emb = self.feature_extractor(img_arr)
-                emb = emb.unsqueeze(0)
-                emb_list.append(emb)
-
-            x = torch.cat(emb_list, dim=0)
-
-            y = np.array(self.data.iloc[idx, 1:4].tolist())
+        if self.split_name == "train":
+            if self.feature_extractor:
+                x = convert_to_8_tile(img)
+                x = self.feature_extractor(x)
+            else:
+                img_arr = np.array(img)
+                x = img_arr
         else:
-            x = self.feature_extractor(img_arr)
-            y = np.array(self.data.iloc[idx, 1:4].tolist())
+            if self.feature_extractor:
+                if self.transform:
+                    emb_list = []
+                    img_arr = np.array(img)
+                    for aug in self.transform:
+                        img_arr_aug = aug(image=img_arr)["image"]
+                        img_aug = Image.fromarray(img_arr_aug)
+                        img_tiles = convert_to_8_tile(img_aug)
+                        img_emb = self.feature_extractor(img_tiles)
+                        emb_list.append(img_emb.unsqueeze(0))
+
+                    x = torch.cat(emb_list, dim=0)
+                else:
+                    x = self.feature_extractor(img)
+            else:
+                pass
+
+        y = np.array(self.data.iloc[idx, 1:4].tolist())
 
         return x, y
 
