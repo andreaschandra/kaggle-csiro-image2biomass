@@ -3,16 +3,18 @@
 import torch
 from transformers import AutoImageProcessor, AutoModel
 
+from csiro_biomass.features.base import BaseFeatureExtractor
 
-class DinoFeatureExtractor:
+
+class DinoFeatureExtractor(BaseFeatureExtractor):
     """DINO feature extractor."""
 
     def __init__(self, config):
         self.config = config
         self.processor = AutoImageProcessor.from_pretrained(
-            config.feature_extractor.model, device=config.general.device
+            config.feature_extractor.pretrained_name, device=config.general.device
         )
-        self.model = AutoModel.from_pretrained(config.feature_extractor.model)
+        self.model = AutoModel.from_pretrained(config.feature_extractor.pretrained_name)
         self.model = self.model.to(config.general.device)
         self.model.eval()
 
@@ -20,18 +22,7 @@ class DinoFeatureExtractor:
         if aug_func:
             img = aug_func(image=img)["image"]
 
-        img1 = img[:500, :500]
-        img2 = img[:500, 500:1000]
-        img3 = img[:500, 1000:1500]
-        img4 = img[:500, 1500:]
-
-        img5 = img[500:, :500]
-        img6 = img[500:, 500:1000]
-        img7 = img[500:, 1000:1500]
-        img8 = img[500:, 1500:]
-        inputs = self.processor(
-            images=[img, img1, img2, img3, img4, img5, img6, img7, img8], return_tensors="pt"
-        )
+        inputs = self.processor(images=img, return_tensors="pt")
         inputs = inputs.to(self.config.general.device)
 
         with torch.no_grad():
