@@ -233,6 +233,8 @@ mlruns/
 
 # custom
 .vscode
+.continue
+deploy.sh
 uv.lock
 ./models/
 configs/*.yaml
