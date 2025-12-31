@@ -33,7 +33,9 @@ class General:
 class FeatureExtractor:
     """Feature extractor configuration."""
 
+    is_enabled: bool = False
     model: str = None
+    pretrained_name: str = None
 
 
 @dataclass
@@ -43,6 +45,11 @@ class Dataset:
     train: str = None
     test: str = None
     kfolds: int = 1
+
+
+@dataclass
+class Regressor:
+    model: str
 
 
 @dataclass
@@ -107,6 +114,7 @@ class Config:
     general: General
     feature_extractor: FeatureExtractor
     dataset: Dataset
+    regressor: Regressor
     trainer: Trainer
     optimizer: Optimizer
     scheduler: Scheduler
@@ -127,6 +135,7 @@ class Config:
             general=General(**config_dict.get("general", {})),
             feature_extractor=FeatureExtractor(**config_dict.get("feature_extractor", {})),
             dataset=Dataset(**config_dict.get("dataset", {})),
+            regressor=Regressor(**config_dict.get("regressor", {})),
             trainer=Trainer(**config_dict.get("trainer", {})),
             optimizer=Optimizer(**config_dict.get("optimizer", {})),
             scheduler=Scheduler(**config_dict.get("scheduler", {})),
