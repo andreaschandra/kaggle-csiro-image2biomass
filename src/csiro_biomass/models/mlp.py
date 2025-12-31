@@ -1,10 +1,11 @@
 """MLP Regressor model."""
 
-
 import torch.nn as nn
 
+from .base import BaseModel
 
-class MLP(nn.Module):
+
+class MLP(nn.Module, BaseModel):
     """MLP regressor model."""
 
     def __init__(self, emb_size):
