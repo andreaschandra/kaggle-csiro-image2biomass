@@ -4,6 +4,7 @@ import os
 
 import albumentations as A
 import numpy as np
+import pandas as pd
 import torch
 from PIL import Image
 from sklearn.model_selection import StratifiedKFold
@@ -22,6 +23,7 @@ class CSIRO(Dataset):
         self.logger = logger
         self.is_dataset_exist()
         d_data = read_csv(self.config.dataset.train)
+        d_aug = read_csv(config.dataset.augmented)
         d_data = self.data_cleanup(d_data)
         d_data = self.target_transform(d_data)
 
@@ -30,14 +32,21 @@ class CSIRO(Dataset):
             n_splits=config.dataset.kfolds, shuffle=True, random_state=config.general.seed
         )
         for i_fold, (t_index, v_index) in enumerate(skf.split(d_data, d_data.outlier)):
-            train = d_data.iloc[t_index]
+            # train
+            raw_train = d_data.iloc[t_index]
+            train = self.integrate_augmentation(raw_train.copy(), d_aug.copy())
+
+            # valid
             valid = d_data.iloc[v_index]
+
+            # create fold
             self.data_fold[i_fold] = {"train": (train, len(train)), "valid": (valid, len(valid))}
 
         self.split_name = None
         self.data = None
         self.length = None
         self.img_dir_path = config.general.img_dir
+        self.aug_dir_path = config.dataset.aug_dir
         self.feature_extractor = feature_extractor
         self.transform = self.get_tta()
 
@@ -87,6 +96,14 @@ class CSIRO(Dataset):
 
         return d_train_selected
 
+    @staticmethod
+    def integrate_augmentation(train, d_aug):
+        train["filename"] = train.image_path.apply(lambda x: x.split("/")[-1].replace(".jpg", ""))
+        d_aug["filename"] = d_aug.image_path.apply(lambda x: x.split("/")[-1].split("_")[0])
+        selected_aug = d_aug[d_aug.filename.isin(train.filename)]
+        combined = pd.concat((train, selected_aug))
+        return combined
+
     def target_transform(self, d_data, method="log1p"):
         """Transform target variable."""
 
@@ -120,7 +137,12 @@ class CSIRO(Dataset):
 
     def __getitem__(self, idx):
         img_path = self.data.iloc[idx, 0]
-        img_full_path = os.path.join(self.img_dir_path, img_path)
+
+        if "augmented" in img_path:
+            img_full_path = os.path.join(self.aug_dir_path, img_path)
+        else:
+            img_full_path = os.path.join(self.img_dir_path, img_path)
+
         img = Image.open(img_full_path)
 
         if self.split_name == "train":

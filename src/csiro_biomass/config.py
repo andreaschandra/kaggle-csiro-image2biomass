@@ -45,6 +45,9 @@ class Dataset:
     train: str = None
     test: str = None
     kfolds: int = 1
+    use_train_augmentation: bool = True
+    augmented: str = None
+    aug_dir: str = None
 
 
 @dataclass

@@ -234,9 +234,11 @@ mlruns/
 # custom
 .vscode
 .continue
+.claude
 deploy.sh
 uv.lock
 ./models/
+data/augmented
 configs/*.yaml
 fe-models/
 logs/
