@@ -27,11 +27,11 @@ class ConvNeXtV2FeatureExtractor(nn.Module, BaseFeatureExtractor):
 
         self.freeze_backbone()
 
-    def forward(self, x):
+    def forward(self, x, batch_size, num_tiles):
         with torch.no_grad():
             emb_tiles = self.backbone(x)
 
-        emb_tiles = emb_tiles.reshape(self.config.trainer.batch_size, 9, -1)
+        emb_tiles = emb_tiles.reshape(batch_size, num_tiles, -1)
         emb_mean = emb_tiles.mean(dim=1)
 
         return emb_mean
