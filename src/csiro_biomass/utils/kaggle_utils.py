@@ -42,7 +42,6 @@ def download_kaggle_competition_data(competition: str) -> Path:
     # Download competition data using kagglehub
     download_path = kagglehub.competition_download(competition)
 
-    print(f"Competition '{competition}' data available at {download_path}")
     return Path(download_path)
 
 

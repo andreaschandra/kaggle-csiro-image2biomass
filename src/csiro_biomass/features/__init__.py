@@ -12,7 +12,6 @@ def get_feature_extractor(config, kwargs={}):
 
     for cls in BaseFeatureExtractor.__subclasses__():
         if config.feature_extractor.model == cls.__name__:
-            print(cls.__name__)
             return cls(config, **kwargs)
 
     raise ValueError(f"Model name not found, given: {config.feature_extractor.model}")

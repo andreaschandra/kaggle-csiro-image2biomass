@@ -1,9 +1,8 @@
 """HuggingFace Hub utilities for model checkpoint management."""
 
-import os
 from pathlib import Path
 
-from huggingface_hub import HfApi, create_repo, login, upload_file
+from huggingface_hub import HfApi, create_repo, upload_file
 
 
 def upload_checkpoint_to_hf(
@@ -58,7 +57,6 @@ def upload_checkpoint_to_hf(
         token=token,
     )
 
-    print(f"Checkpoint uploaded to: {url}")
     return url
 
 
@@ -102,8 +100,6 @@ def upload_model_folder_to_hf(
         commit_message = f"Upload model from {folder_path.name}"
 
     # Upload folder
-    print(os.getenv("HF_TOKEN"))
-    login(token=os.getenv("HF_TOKEN"))
 
     client = HfApi()
 
@@ -117,7 +113,6 @@ def upload_model_folder_to_hf(
         revision=tag,
     )
 
-    print(f"Model folder uploaded to: {url}")
     return url
 
 
@@ -154,7 +149,6 @@ def create_hf_model_repo(
         repo_type="model",
     )
 
-    print(f"Repository created: {url}")
     return url
 
 

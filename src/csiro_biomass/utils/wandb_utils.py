@@ -129,7 +129,6 @@ def log_model_checkpoint(
         raise ValueError(f"Checkpoint path does not exist: {checkpoint_path}")
 
     wandb.log_artifact(artifact, aliases=aliases)
-    print(f"Model checkpoint logged as artifact: {name}")
     return artifact
 
 
@@ -155,7 +154,6 @@ def watch_model(
         >>> watch_model(model, log="all", log_freq=100)
     """
     wandb.watch(model, log=log, log_freq=log_freq, log_graph=log_graph)
-    print(f"Model watching enabled (log={log}, freq={log_freq})")
 
 
 def finish_run(exit_code: int | None = None, quiet: bool = False) -> None:
@@ -171,8 +169,6 @@ def finish_run(exit_code: int | None = None, quiet: bool = False) -> None:
         >>> finish_run()
     """
     wandb.finish(exit_code=exit_code, quiet=quiet)
-    if not quiet:
-        print("wandb run finished")
 
 
 def log_config(config: dict[str, Any]) -> None:
@@ -212,7 +208,6 @@ def log_table(
     """
     table = wandb.Table(data=data, columns=columns)
     wandb.log({name: table})
-    print(f"Table '{name}' logged to wandb")
 
 
 def log_image(
