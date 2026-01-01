@@ -33,4 +33,4 @@ def save_model(path, model):
     if os.path.exists(os.path.dirname(path)) is False:
         os.makedirs(os.path.dirname(path))
 
-    torch.save(model.model.state_dict(), path)
+    torch.save(model.state_dict(), path)
