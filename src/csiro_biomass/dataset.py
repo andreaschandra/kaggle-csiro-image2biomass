@@ -17,12 +17,15 @@ from csiro_biomass.utils.kaggle_utils import authenticate_kaggle, download_kaggl
 class CSIRO(Dataset):
     """CSIRO biomass dataset."""
 
-    def __init__(self, config, logger=None, feature_extractor=None):
+    def __init__(self, config, logger=None):
         self.config = config
         self.logger = logger
         self.is_dataset_exist()
         d_data = read_csv(self.config.dataset.train)
         d_aug = read_csv(config.dataset.augmented)
+        d_aug["filename"] = d_aug.image_path.apply(lambda x: x.split("/")[-1].split("_")[0])
+        d_aug = d_aug.groupby("filename", as_index=False).head(2).copy()
+        print("d_aug.shape", d_aug.shape)
         d_aug = self.target_transform(d_aug)
         d_data = self.data_cleanup(d_data)
         d_data = self.target_transform(d_data)
@@ -47,7 +50,6 @@ class CSIRO(Dataset):
         self.length = None
         self.img_dir_path = config.general.img_dir
         self.aug_dir_path = config.dataset.aug_dir
-        self.feature_extractor = feature_extractor
         self.transform = self.get_tta()
 
     def is_dataset_exist(self):

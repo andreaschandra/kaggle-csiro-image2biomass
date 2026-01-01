@@ -74,9 +74,13 @@ class Pipeline:
         if self.config.feature_extractor.is_enabled:
             self.logger.info("Load feature extractor")
             self.feature_extractor = get_feature_extractor(self.config)
+            self.feature_extractor = self.feature_extractor.to(self.config.general.device)
 
         self.logger.info("Load Dataset")
-        self.dataset = CSIRO(self.config, self.logger, self.feature_extractor)
+        self.dataset = CSIRO(self.config, self.logger)
+        self.dataset.set_fold(0)
+        print(self.dataset.dataset["train"][0].shape)
+        print(self.dataset.dataset["valid"][0].shape)
 
     def set_model(self):
         """Set up model regressor."""
