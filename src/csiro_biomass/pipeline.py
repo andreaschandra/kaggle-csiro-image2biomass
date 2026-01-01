@@ -75,6 +75,7 @@ class Pipeline:
             self.logger.info("Load feature extractor")
             self.feature_extractor = get_feature_extractor(self.config)
             self.feature_extractor = self.feature_extractor.to(self.config.general.device)
+            self.feature_extractor.eval()
 
         self.logger.info("Load Dataset")
         self.dataset = CSIRO(self.config, self.logger)
