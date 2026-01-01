@@ -62,6 +62,7 @@ class Trainer:
     epoch: int = 100
     batch_size: int = 32
     shuffle: bool = True
+    num_workers: int = 0
 
 
 @dataclass

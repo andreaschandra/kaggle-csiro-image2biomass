@@ -5,7 +5,6 @@ import os
 import albumentations as A
 import numpy as np
 import pandas as pd
-import torch
 from PIL import Image
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import Dataset
@@ -24,6 +23,7 @@ class CSIRO(Dataset):
         self.is_dataset_exist()
         d_data = read_csv(self.config.dataset.train)
         d_aug = read_csv(config.dataset.augmented)
+        d_aug = self.target_transform(d_aug)
         d_data = self.data_cleanup(d_data)
         d_data = self.target_transform(d_data)
 
@@ -146,29 +146,21 @@ class CSIRO(Dataset):
         img = Image.open(img_full_path)
 
         if self.split_name == "train":
-            if self.feature_extractor:
-                x = convert_to_8_tile(img)
-                x = self.feature_extractor(x)
-            else:
-                img_arr = np.array(img)
-                x = img_arr
+            x = convert_to_8_tile(img)
         else:
-            if self.feature_extractor:
-                if self.transform:
-                    emb_list = []
-                    img_arr = np.array(img)
-                    for aug in self.transform:
-                        img_arr_aug = aug(image=img_arr)["image"]
-                        img_aug = Image.fromarray(img_arr_aug)
-                        img_tiles = convert_to_8_tile(img_aug)
-                        img_emb = self.feature_extractor(img_tiles)
-                        emb_list.append(img_emb.unsqueeze(0))
+            if self.transform:
+                tta_tiles = []
+                img_arr = np.array(img)
+                for aug in self.transform:
+                    img_arr_aug = aug(image=img_arr)["image"]
+                    img_aug = Image.fromarray(img_arr_aug)
+                    img_tiles = convert_to_8_tile(img_aug)
+                    tta_tiles.append(img_tiles)
 
-                    x = torch.cat(emb_list, dim=0)
-                else:
-                    x = self.feature_extractor(img)
+                tta_tiles.append(convert_to_8_tile(img))
+                x = tta_tiles
             else:
-                pass
+                x = convert_to_8_tile(img)
 
         y = np.array(self.data.iloc[idx, 1:4].tolist())
 
