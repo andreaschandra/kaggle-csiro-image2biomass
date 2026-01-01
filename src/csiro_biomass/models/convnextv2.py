@@ -10,17 +10,20 @@ class ConvNeXtV2Regressor(nn.Module, BaseModel):
         self,
         config,
         emb_size: int,
-        drop_rate: float = 0.3,
+        drop_rate: float = 0.2,
     ):
         super().__init__()
 
         self.head = nn.Sequential(
             nn.LayerNorm(emb_size),
+            nn.Linear(emb_size, 1024),
+            nn.GELU(),
+            nn.Linear(1024, 512),
             nn.Dropout(drop_rate),
-            nn.Linear(emb_size, 512),
+            nn.Linear(512, 256),
             nn.GELU(),
             nn.Dropout(drop_rate / 2),
-            nn.Linear(512, 3),
+            nn.Linear(256, 3),
         )
 
         self._init_head()
