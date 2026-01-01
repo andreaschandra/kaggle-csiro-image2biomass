@@ -16,8 +16,6 @@ class ConvNeXtV2FeatureExtractor(nn.Module, BaseFeatureExtractor):
         super().__init__()
 
         self.config = config
-        data_config = timm.data.resolve_model_data_config(config.feature_extractor.pretrained_name)
-        self.transform = timm.data.create_transform(**data_config, is_training=False)
         self.backbone = timm.create_model(
             model_name=config.feature_extractor.pretrained_name,
             pretrained=True,
@@ -30,18 +28,12 @@ class ConvNeXtV2FeatureExtractor(nn.Module, BaseFeatureExtractor):
         self.freeze_backbone()
 
     def forward(self, x):
-        emb_tiles = []
-        for tile in x:
-            x = self.transform(tile)
-            x = x.unsqueeze(0)
-            x = x.to(self.config.general.device)
+        with torch.no_grad():
+            emb_tiles = self.backbone(x)
 
-            with torch.no_grad():
-                out = self.backbone(x)
-                emb_tiles.append(out)
+        emb_tiles = emb_tiles.reshape(self.config.trainer.batch_size, 9, -1)
+        emb_mean = emb_tiles.mean(dim=1)
 
-        emb_tiles = torch.cat(emb_tiles, dim=0)
-        emb_mean = emb_tiles.mean(dim=0)
         return emb_mean
 
     def freeze_backbone(self):

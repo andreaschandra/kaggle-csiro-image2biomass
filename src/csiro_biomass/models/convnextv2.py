@@ -24,6 +24,7 @@ class ConvNeXtV2Regressor(nn.Module, BaseModel):
             nn.GELU(),
             nn.Dropout(drop_rate / 2),
             nn.Linear(256, 3),
+            nn.ReLU(),
         )
 
         self._init_head()

@@ -2,9 +2,10 @@
 
 import os
 
-import albumentations as A
 import numpy as np
 import pandas as pd
+import timm
+import torch
 from PIL import Image
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import Dataset
@@ -20,15 +21,16 @@ class CSIRO(Dataset):
     def __init__(self, config, logger=None):
         self.config = config
         self.logger = logger
+
         self.is_dataset_exist()
         d_data = read_csv(self.config.dataset.train)
+        d_data = self.data_cleanup(d_data)
+        d_data = self.target_transform(d_data)
+
         d_aug = read_csv(config.dataset.augmented)
         d_aug["filename"] = d_aug.image_path.apply(lambda x: x.split("/")[-1].split("_")[0])
         d_aug = d_aug.groupby("filename", as_index=False).head(2).copy()
-        print("d_aug.shape", d_aug.shape)
         d_aug = self.target_transform(d_aug)
-        d_data = self.data_cleanup(d_data)
-        d_data = self.target_transform(d_data)
 
         self.data_fold = {}
         skf = StratifiedKFold(
@@ -48,9 +50,10 @@ class CSIRO(Dataset):
         self.split_name = None
         self.data = None
         self.length = None
+        data_config = timm.data.resolve_model_data_config(config.feature_extractor.pretrained_name)
+        self.transform = timm.data.create_transform(**data_config, is_training=False)
         self.img_dir_path = config.general.img_dir
         self.aug_dir_path = config.dataset.aug_dir
-        self.transform = self.get_tta()
 
     def is_dataset_exist(self):
         """Check if dataset exists."""
@@ -127,16 +130,6 @@ class CSIRO(Dataset):
         self.split_name = split
         self.data, self.length = self.dataset[split]
 
-    def get_tta(self):
-        """Test Time augmentation"""
-        transforms = [
-            A.HorizontalFlip(p=1.0),
-            A.VerticalFlip(p=1.0),
-            A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=1.0),
-            A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=10, val_shift_limit=10, p=1.0),
-        ]
-        return transforms
-
     def __getitem__(self, idx):
         img_path = self.data.iloc[idx, 0]
 
@@ -147,22 +140,14 @@ class CSIRO(Dataset):
 
         img = Image.open(img_full_path)
 
-        if self.split_name == "train":
-            x = convert_to_8_tile(img)
-        else:
-            if self.transform:
-                tta_tiles = []
-                img_arr = np.array(img)
-                for aug in self.transform:
-                    img_arr_aug = aug(image=img_arr)["image"]
-                    img_aug = Image.fromarray(img_arr_aug)
-                    img_tiles = convert_to_8_tile(img_aug)
-                    tta_tiles.append(img_tiles)
+        x_tiles = convert_to_8_tile(img)
+        x_transformed = []
+        for tile in x_tiles:
+            tile_arr = self.transform(tile)
+            tile_arr = tile_arr.unsqueeze(0)
+            x_transformed.append(tile_arr)
 
-                tta_tiles.append(convert_to_8_tile(img))
-                x = tta_tiles
-            else:
-                x = convert_to_8_tile(img)
+        x = torch.cat(x_transformed, dim=0)
 
         y = np.array(self.data.iloc[idx, 1:4].tolist())
 

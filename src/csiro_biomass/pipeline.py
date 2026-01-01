@@ -17,24 +17,6 @@ from csiro_biomass.optimizer import Optimizer
 from csiro_biomass.utils.io import save_model
 
 
-def collate_tiles(batch):
-    """Custom collate function for batches of image tiles.
-
-    Args:
-        batch: List of tuples (tiles, target) where:
-            - For training: tiles is a list of PIL Images
-            - For validation: tiles is a list of lists (TTA versions)
-
-    Returns:
-        Tuple of (tile_batch, target_batch) where:
-            - tile_batch: List of tile-lists (one per sample)
-            - target_batch: Tensor of stacked targets
-    """
-    tiles_batch = [item[0] for item in batch]
-    targets_batch = torch.stack([torch.FloatTensor(item[1]) for item in batch])
-    return tiles_batch, targets_batch
-
-
 class Pipeline:
     """Main pipeline to run training, validation, and testing."""
 
@@ -79,9 +61,6 @@ class Pipeline:
 
         self.logger.info("Load Dataset")
         self.dataset = CSIRO(self.config, self.logger)
-        self.dataset.set_fold(0)
-        print(self.dataset.dataset["train"][0].shape)
-        print(self.dataset.dataset["valid"][0].shape)
 
     def set_model(self):
         """Set up model regressor."""
@@ -122,20 +101,17 @@ class Pipeline:
             batch_size=self.config.trainer.batch_size,
             shuffle=False,
             num_workers=self.config.trainer.num_workers,
-            collate_fn=collate_tiles,
             persistent_workers=(self.config.trainer.num_workers > 0),
         )
         self.model.train()
-        for batch_index, (tiles_batch, y) in enumerate(data_gen, 1):
-            # Extract features for each sample in the batch
-            embeddings = []
-            for tiles in tiles_batch:
-                embedding = self.feature_extractor(tiles)
-                embeddings.append(embedding)
-
-            x = torch.stack(embeddings)
+        for batch_index, (x, y) in enumerate(data_gen, 1):
+            # Extract features for each sample in the batch\
             x = x.to(self.config.general.device)
             y = y.to(self.config.general.device)
+
+            # combine batches x total_tiles -> revert back to [batches, img_emb]
+            x = x.reshape(-1, 3, 224, 224)
+            x = self.feature_extractor(x)
 
             self.model.zero_grad()
 
@@ -159,37 +135,26 @@ class Pipeline:
         self.logger.info(f"Fold: {fold}")
         self.dataset.set_fold(fold)
         self.dataset.set_split("valid")
-        num_workers = (
-            self.config.trainer.num_workers if hasattr(self.config.trainer, "num_workers") else 0
-        )
+
         data_gen = DataLoader(
             self.dataset,
             batch_size=self.config.trainer.batch_size,
             shuffle=False,
-            num_workers=num_workers,
-            collate_fn=collate_tiles,
-            persistent_workers=(num_workers > 0),
+            num_workers=self.config.trainer.num_workers,
+            persistent_workers=(self.config.trainer.num_workers > 0),
         )
         self.model.eval()
-        for batch_index, (tiles_batch, y) in enumerate(data_gen, 1):
-            # Extract features for each sample and each TTA version
-            embeddings_batch = []
-            for tta_tiles_list in tiles_batch:
-                tta_embeddings = []
-                for tiles in tta_tiles_list:
-                    embedding = self.feature_extractor(tiles)
-                    tta_embeddings.append(embedding)
-
-                sample_embeddings = torch.stack(tta_embeddings)
-                embeddings_batch.append(sample_embeddings)
-
-            x = torch.stack(embeddings_batch)
+        for batch_index, (x, y) in enumerate(data_gen, 1):
+            # Extract features for each sample in the batch\
             x = x.to(self.config.general.device)
             y = y.to(self.config.general.device)
 
+            # combine batches x total_tiles -> revert back to [batches, img_emb]
+            x = x.reshape(-1, 3, 224, 224)
+            x = self.feature_extractor(x)
+
             with torch.no_grad():
                 out = self.model(x)
-                out = out.mean(dim=1)
 
             loss = self.criterion(out, y)
             self.metrics[f"fold-{fold}/valid_loss"] += (

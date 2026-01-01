@@ -14,6 +14,6 @@ def convert_to_8_tile(img):
 
     img_resized = img.resize((500, 500))
 
-    img_tiles = [img_resized, img1, img2, img3, img4, img5, img6, img7, img7, img8]
+    img_tiles = [img_resized, img1, img2, img3, img4, img5, img6, img7, img8]
 
     return img_tiles
