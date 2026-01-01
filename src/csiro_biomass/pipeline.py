@@ -151,8 +151,9 @@ class Pipeline:
             y = y.to(self.config.general.device)
 
             # combine batches x total_tiles -> revert back to [batches, img_emb]
+            batch_size, tiles, _, _, _ = x.shape
             x = x.reshape(-1, 3, 224, 224)
-            x = self.feature_extractor(x)
+            x = self.feature_extractor(x, batch_size, tiles)
 
             with torch.no_grad():
                 out = self.model(x)
