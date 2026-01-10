@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from csiro_biomass.dataset import CSIRO
 from csiro_biomass.features import get_feature_extractor
-from csiro_biomass.loss import WeightedHuberLoss
+from csiro_biomass.loss import get_loss_function
 from csiro_biomass.metrics import compute_weighted_r2
 from csiro_biomass.models import get_model_regressor
 from csiro_biomass.optimizer import Optimizer
@@ -56,8 +56,6 @@ class Pipeline:
         if self.config.feature_extractor.is_enabled:
             self.logger.info("Load feature extractor")
             self.feature_extractor = get_feature_extractor(self.config)
-            self.feature_extractor = self.feature_extractor.to(self.config.general.device)
-            self.feature_extractor.eval()
 
         self.logger.info("Load Dataset")
         self.dataset = CSIRO(self.config, self.logger)
@@ -65,7 +63,6 @@ class Pipeline:
     def set_model(self):
         """Set up model regressor."""
         self.logger.info("Load MLP regressor model")
-        torch.cuda.empty_cache()
         self.model = get_model_regressor(self.config, self.feature_extractor.get_embedding_dim())
         self.model = self.model.to(self.config.general.device)
 
@@ -86,7 +83,7 @@ class Pipeline:
     def set_criterion(self):
         """Set up criterion."""
         self.logger.info("Load criterion")
-        self.criterion = WeightedHuberLoss(delta=3.0, device=self.config.general.device)
+        self.criterion = get_loss_function(self.config)
 
     def train(self, fold):
         """Train the model."""
@@ -109,9 +106,15 @@ class Pipeline:
             x = x.to(self.config.general.device)
             y = y.to(self.config.general.device)
 
-            # combine batches x total_tiles -> revert back to [batches, img_emb]
-            batch_size, tiles, _, _, _ = x.shape
-            x = x.reshape(-1, 3, 224, 224)
+            # transfrom [batch, tiles, c, h, w] -> [all_tiles, c, h , w]
+            if self.config.feature_extractor.model == "ConvNeXtV2FeatureExtractor":
+                batch_size, tiles, c, h, w = x.shape
+                x = x.reshape(-1, c, h, w)
+            else:
+                batch_size, tiles, c, h, w = x["pixel_values"].shape
+                x["pixel_values"] = x["pixel_values"].reshape(-1, c, h, w)
+
+            # [batch, emb_size]
             x = self.feature_extractor(x, batch_size, tiles)
 
             self.model.zero_grad()
@@ -129,6 +132,7 @@ class Pipeline:
 
             loss.backward()
             self.optimizer.step()
+            break
 
     def valid(self, fold):
         """Validate the model."""
@@ -150,9 +154,15 @@ class Pipeline:
             x = x.to(self.config.general.device)
             y = y.to(self.config.general.device)
 
-            # combine batches x total_tiles -> revert back to [batches, img_emb]
-            batch_size, tiles, _, _, _ = x.shape
-            x = x.reshape(-1, 3, 224, 224)
+            # transfrom [batch, tiles, c, h, w] -> [all_tiles, c, h , w]
+            if self.config.feature_extractor.model == "ConvNeXtV2FeatureExtractor":
+                batch_size, tiles, c, h, w = x.shape
+                x = x.reshape(-1, c, h, w)
+            else:
+                batch_size, tiles, c, h, w = x["pixel_values"].shape
+                x["pixel_values"] = x["pixel_values"].reshape(-1, c, h, w)
+
+            # [batch, emb_size]
             x = self.feature_extractor(x, batch_size, tiles)
 
             with torch.no_grad():
@@ -167,6 +177,7 @@ class Pipeline:
             self.metrics[f"fold-{fold}/valid_r2"] += (
                 r2 - self.metrics[f"fold-{fold}/valid_r2"]
             ) / batch_index
+            break
 
     def epoch(self, fold):
         """Run a single epoch of training and validation."""

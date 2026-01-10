@@ -9,6 +9,7 @@ import torch
 from PIL import Image
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import Dataset
+from transformers import AutoImageProcessor
 
 from csiro_biomass.utils.img_proc import convert_to_8_tile
 from csiro_biomass.utils.io import read_csv
@@ -25,12 +26,14 @@ class CSIRO(Dataset):
         self.is_dataset_exist()
         d_data = read_csv(self.config.dataset.train)
         d_data = self.data_cleanup(d_data)
-        d_data = self.target_transform(d_data)
+        if config.dataset.target_transform:
+            d_data = self.target_transform(d_data)
 
         d_aug = read_csv(config.dataset.augmented)
         d_aug["filename"] = d_aug.image_path.apply(lambda x: x.split("/")[-1].split("_")[0])
         d_aug = d_aug.groupby("filename", as_index=False).head(2).copy()
-        d_aug = self.target_transform(d_aug)
+        if config.dataset.target_transform:
+            d_aug = self.target_transform(d_aug)
 
         self.data_fold = {}
         skf = StratifiedKFold(
@@ -50,8 +53,15 @@ class CSIRO(Dataset):
         self.split_name = None
         self.data = None
         self.length = None
-        data_config = timm.data.resolve_model_data_config(config.feature_extractor.pretrained_name)
-        self.transform = timm.data.create_transform(**data_config, is_training=False)
+        if config.feature_extractor.model == "ConvNeXtV2FeatureExtractor":
+            data_config = timm.data.resolve_model_data_config(
+                config.feature_extractor.pretrained_name
+            )
+            self.transform = timm.data.create_transform(**data_config, is_training=False)
+        else:
+            self.transform = AutoImageProcessor.from_pretrained(
+                config.feature_extractor.pretrained_name, device=config.general.device
+            )
         self.img_dir_path = config.general.img_dir
         self.aug_dir_path = config.dataset.aug_dir
 
@@ -141,13 +151,17 @@ class CSIRO(Dataset):
         img = Image.open(img_full_path)
 
         x_tiles = convert_to_8_tile(img)
-        x_transformed = []
-        for tile in x_tiles:
-            tile_arr = self.transform(tile)
-            tile_arr = tile_arr.unsqueeze(0)
-            x_transformed.append(tile_arr)
 
-        x = torch.cat(x_transformed, dim=0)
+        if self.config.feature_extractor.model == "ConvNeXtV2FeatureExtractor":
+            x_transformed = []
+            for tile in x_tiles:
+                tile_arr = self.transform(tile)
+                tile_arr = tile_arr.unsqueeze(0)
+                x_transformed.append(tile_arr)
+
+            x = torch.cat(x_transformed, dim=0)
+        else:
+            x = self.transform(x_tiles, return_tensors="pt")
 
         y = np.array(self.data.iloc[idx, 1:4].tolist())
 

@@ -14,6 +14,7 @@ class ConvNeXtV2Regressor(nn.Module, BaseModel):
     ):
         super().__init__()
 
+        self.config = config
         self.head = nn.Sequential(
             nn.LayerNorm(emb_size),
             nn.Dropout(drop_rate),

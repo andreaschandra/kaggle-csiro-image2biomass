@@ -1,15 +1,17 @@
 """DINO feature extractor."""
 
 import torch
+import torch.nn as nn
 from transformers import AutoImageProcessor, AutoModel
 
 from csiro_biomass.features.base import BaseFeatureExtractor
 
 
-class DinoFeatureExtractor(BaseFeatureExtractor):
+class DinoFeatureExtractor(nn.Module, BaseFeatureExtractor):
     """DINO feature extractor."""
 
     def __init__(self, config):
+        super().__init__()
         self.config = config
         self.processor = AutoImageProcessor.from_pretrained(
             config.feature_extractor.pretrained_name, device=config.general.device
@@ -18,25 +20,24 @@ class DinoFeatureExtractor(BaseFeatureExtractor):
         self.model = self.model.to(config.general.device)
         self.model.eval()
 
-    def __call__(self, img, aug_func=None):
-        if aug_func:
-            img = aug_func(image=img)["image"]
-
-        inputs = self.processor(images=img, return_tensors="pt")
-        inputs = inputs.to(self.config.general.device)
-
+    def forward(self, img, batch_size, num_tiles):
         with torch.no_grad():
-            outputs = self.model(**inputs)
+            emb_tiles = self.model(**img)
 
-        # Multi-scale feature extraction
-        patch_tokens = outputs.last_hidden_state[:, 1:, :]  # Patch tokens
+        emb_tiles = emb_tiles.last_hidden_state[:, 1:, :]
 
-        mean = patch_tokens.mean(dim=[0, 1])
+        _, patch_size, emb_size = emb_tiles.shape
+        emb_tiles = emb_tiles.reshape(batch_size, num_tiles, patch_size, emb_size)
 
-        return mean
+        emb_mean = emb_tiles.mean(dim=[1, 2])
+
+        return emb_mean
 
     def get_embedding_dim(self):
         """Get embedding dimension."""
-        img_rand = torch.randint(low=0, high=255, size=(1, 2000, 1000, 3))
-        out = self(img_rand)
-        return out.shape[0]
+        img_rand = torch.randint(low=0, high=255, size=(2000, 1000, 3))
+        x = self.processor(img_rand, return_tensors="pt")
+        x = x.to(self.config.general.device)
+        out = self(x, batch_size=1, num_tiles=1)
+        # [batch_size, emb_size]
+        return out.shape[1]

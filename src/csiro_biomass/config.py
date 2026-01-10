@@ -48,6 +48,7 @@ class Dataset:
     use_train_augmentation: bool = True
     augmented: str = None
     aug_dir: str = None
+    target_transform: bool = False
 
 
 @dataclass
@@ -85,8 +86,8 @@ class Scheduler:
 class Loss:
     """Loss configuration."""
 
-    type: float = None
-    params: dict = None
+    type: float
+    params: dict
 
 
 @dataclass

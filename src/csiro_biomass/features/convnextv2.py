@@ -2,12 +2,11 @@
 
 import timm
 import torch
-import torch.nn as nn
 
 from csiro_biomass.features.base import BaseFeatureExtractor
 
 
-class ConvNeXtV2FeatureExtractor(nn.Module, BaseFeatureExtractor):
+class ConvNeXtV2FeatureExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         config,

@@ -8,9 +8,10 @@ from .base import BaseModel
 class MLP(nn.Module, BaseModel):
     """MLP regressor model."""
 
-    def __init__(self, emb_size):
+    def __init__(self, config, emb_size):
         super().__init__()
 
+        self.config = config
         self.model = nn.Sequential(
             nn.Linear(emb_size, 1024),
             nn.LeakyReLU(),
