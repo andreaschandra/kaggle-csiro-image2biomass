@@ -69,7 +69,6 @@ class Pipeline:
     def set_optimizer(self):
         """Set up optimizer."""
         self.logger.info("Load optimizer")
-        torch.cuda.empty_cache()
         self.optimizer = Optimizer(self.model, params=self.config.optimizer.params)
         scheduler_params = {
             "mode": "max",
