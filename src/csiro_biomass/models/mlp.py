@@ -13,13 +13,12 @@ class MLP(nn.Module, BaseModel):
 
         self.config = config
         self.model = nn.Sequential(
-            nn.Linear(emb_size, 1024),
+            nn.Linear(emb_size, 512),
             nn.LeakyReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(1024, 512),
-            nn.LeakyReLU(),
+            nn.Dropout2d(0.1),
             nn.Linear(512, 256),
             nn.LeakyReLU(),
+            nn.Dropout2d(0.1),
             nn.Linear(256, 3),
             nn.ReLU(),
         )

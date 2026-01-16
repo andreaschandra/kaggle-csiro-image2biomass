@@ -261,7 +261,7 @@ class EarlyStopping:
     def __call__(self, val_score, epoch):
         if self.best_score is None:
             self.best_score = val_score
-        elif (val_score < self.best_score + self.min_delta) and (epoch > 80):
+        elif (val_score < self.best_score + self.min_delta) and (epoch > 30):
             self.counter += 1
             self.logger.info("EarlyStopping Counter: {self.counter}")
             if self.counter >= self.patience:
