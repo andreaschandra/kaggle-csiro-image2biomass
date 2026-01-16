@@ -262,7 +262,7 @@ class EarlyStopping:
             self.best_score = val_score
         elif (val_score < self.best_score + self.min_delta) and (epoch > 30):
             self.counter += 1
-            self.logger.info("EarlyStopping Counter: {self.counter}")
+            self.logger.info(f"EarlyStopping Counter: {self.counter}")
             if self.counter >= self.patience:
                 return True
         else:
