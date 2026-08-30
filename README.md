@@ -1,7 +1,7 @@
 # 🌾 CSIRO Image2Biomass
 
 > Predicting pasture biomass (clover, dead matter, green matter) from plot images for the
-> [CSIRO Image2Biomass](https://www.kaggle.com/competitions/csiro-image2biomass) Kaggle competition.
+> [CSIRO Image2Biomass](https://www.kaggle.com/competitions/csiro-biomass) Kaggle competition.
 
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![uv](https://img.shields.io/badge/package%20manager-uv-de5fe9)
